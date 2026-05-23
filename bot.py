@@ -1,5 +1,6 @@
 import logging
 import requests
+import html  # Added to escape raw content safely
 from io import BytesIO
 from pypdf import PdfReader
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -75,18 +76,21 @@ async def process_pdf_search(chat_id: int, context: ContextTypes.DEFAULT_TYPE, p
                     found_kw_str = ", ".join(matched_keywords_in_para)
                     
                     # Construct your group tracking header on intervals or right at the beginning of matches
-                    # We will output a new structural parts header block every 2 matches to match the screenshot pattern
                     group_header = ""
                     if match_counter == 1 or match_counter % 2 != 0:
-                        group_header = f"📦 *Detailed Paragraphs (Part {current_part}):*\n\n"
+                        group_header = f"📦 <b>Detailed Paragraphs (Part {current_part}):</b>\n\n"
                         current_part += 1
                     
-                    # Precise visual markdown combination matching your requested layout
+                    # Sanitize variables using html.escape to avoid rendering crashes from characters like <, >, or & in the PDF
+                    safe_kw = html.escape(found_kw_str)
+                    safe_para = html.escape(para_clean)
+                    
+                    # Precise visual combination using clean HTML tags
                     formatted_match = (
                         f"{group_header}"
-                        f"📄 *Context Match #{match_counter}*\n"
-                        f"🔑 Keyword: {found_kw_str}\n"
-                        f"> {para_clean}"
+                        f"📄 <b>Context Match #{match_counter}</b>\n"
+                        f"🔑 Keyword: {safe_kw}\n"
+                        f"<blockquote>{safe_para}</blockquote>"
                     )
                     
                     # Delete the "Please wait" status message right before sending results
@@ -96,8 +100,8 @@ async def process_pdf_search(chat_id: int, context: ContextTypes.DEFAULT_TYPE, p
                         except Exception:
                             pass
 
-                    # Send EACH match dynamically as its own separate blockquoted message payload
-                    await context.bot.send_message(chat_id=chat_id, text=formatted_match, parse_mode="Markdown")
+                    # Send EACH match dynamically using HTML parse mode
+                    await context.bot.send_message(chat_id=chat_id, text=formatted_match, parse_mode="HTML")
                     match_counter += 1
 
         if not found_any_match:
