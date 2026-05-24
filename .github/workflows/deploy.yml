@@ -2,11 +2,11 @@ name: Scheduled PDF Website Update
 
 on:
   schedule:
-    - cron: '0 1 * * *' # Triggers automatically every single day at 01:00 UTC (6:30 AM IST)
+    - cron: '0 1 * * *' # 1:00 AM UTC (6:30 AM IST)
   push:
     branches:
       - main
-  workflow_dispatch: # Allows you to trigger this pipeline manually from the GitHub UI
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -37,10 +37,15 @@ jobs:
       - name: Execute PDF Downloader & Extractor
         run: python extract.py
 
+      - name: Verify Files Exist
+        run: |
+          echo "Checking directory contents before deployment:"
+          ls -la
+
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '.' # This uploads everything, including your index.html and the new latest.md
 
       - name: Deploy to GitHub Pages
         id: deployment
