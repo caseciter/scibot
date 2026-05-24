@@ -18,12 +18,11 @@ def download_pdf(save_path="document.pdf"):
         print(f"Error executing download: {e}")
         return False
 
-def pdf_to_markdown_and_html(pdf_path="document.pdf", output_md="latest.md", output_html="index.html"):
+def pdf_to_markdown(pdf_path="document.pdf", output_md="latest.md"):
     if not os.path.exists(pdf_path):
         print(f"Error: {pdf_path} not found. Generation halted.")
         return
 
-    # Extract text from the PDF pages
     reader = PdfReader(pdf_path)
     extracted_text = []
     
@@ -34,6 +33,23 @@ def pdf_to_markdown_and_html(pdf_path="document.pdf", output_md="latest.md", out
             
     full_text = "\n\n".join(extracted_text)
     paragraphs = full_text.split('\n\n')
+    
+    md_segments = []
+    for p in paragraphs:
+        if p.strip():
+            # Standard markdown line breaking format
+            clean_paragraph = p.replace('\n', '  \n')
+            md_segments.append(clean_paragraph)
+            
+    md_content = "\n\n".join(md_segments)
+
+    with open(output_md, "w", encoding="utf-8") as f:
+        f.write(md_content)
+    print(f"Successfully updated text output in {output_md}")
+
+if __name__ == "__main__":
+    if download_pdf():
+        pdf_to_markdown()
     
     # Process text cleanly into Markdown layout paragraph breaks
     md_segments = []
