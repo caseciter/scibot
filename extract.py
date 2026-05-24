@@ -23,6 +23,7 @@ def pdf_to_markdown_and_html(pdf_path="document.pdf", output_md="latest.md", out
         print(f"Error: {pdf_path} not found. Generation halted.")
         return
 
+    # Extract text from the PDF pages
     reader = PdfReader(pdf_path)
     extracted_text = []
     
@@ -34,26 +35,23 @@ def pdf_to_markdown_and_html(pdf_path="document.pdf", output_md="latest.md", out
     full_text = "\n\n".join(extracted_text)
     paragraphs = full_text.split('\n\n')
     
-    # Clean up line breaks for formatting
+    # Process text cleanly into Markdown layout paragraph breaks
     md_segments = []
     for p in paragraphs:
         if p.strip():
-            # Double space at line-end creates natural breaks in standard Markdown engines
             clean_paragraph = p.replace('\n', '  \n')
             md_segments.append(clean_paragraph)
             
     md_content = "\n\n".join(md_segments)
 
-    # 1. Save raw extracted content as a .md file
+    # 1. Save raw extracted content as latest.md
     with open(output_md, "w", encoding="utf-8") as f:
         f.write(md_content)
     print(f"Successfully saved text to {output_md}")
 
-    # Escaping standard backticks for the javascript template string below
-    safe_md_content = md_content.replace('`', '\\`').replace('$', '\\$')
-
-    # 2. Save index.html template with a minimalist theme utilizing Georgia typography
-    html_template = f"""<!DOCTYPE html>
+    # 2. Save index.html template with high-contrast B&W styling and Georgia typography
+    # This setup dynamically fetches latest.md to avoid string parsing syntax errors entirely
+    html_template = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -61,8 +59,54 @@ def pdf_to_markdown_and_html(pdf_path="document.pdf", output_md="latest.md", out
     <title>Latest Orders</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        body {{
+        body {
             background-color: #ffffff;
             color: #000000;
             font-family: Georgia, serif;
-            line-height:
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        main {
+            max-width: 650px;
+            width: 100%;
+        }
+        p {
+            margin-bottom: 1.5em;
+            font-size: 1.1rem;
+            text-align: justify;
+        }
+        h1, h2, h3 {
+            font-weight: bold;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+    </style>
+</head>
+<body>
+    <main id="content">Loading latest data layout...</main>
+    <script>
+        // Safely fetch the generated markdown file dynamically from the environment
+        fetch('latest.md')
+            .then(response => response.text())
+            .then(markdownText => {
+                document.getElementById('content').innerHTML = marked.parse(markdownText);
+            })
+            .catch(err => {
+                document.getElementById('content').innerHTML = '<p>Error rendering document content.</p>';
+                console.error(err);
+            });
+    </script>
+</body>
+</html>
+"""
+
+    with open(output_html, "w", encoding="utf-8") as f:
+        f.write(html_template)
+    print(f"Successfully generated static structural file: {output_html}")
+
+if __name__ == "__main__":
+    if download_pdf():
+        pdf_to_markdown_and_html()
